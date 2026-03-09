@@ -1,0 +1,21 @@
+{
+  "name": "tauri-app-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests for Tauri app using WebdriverIO",
+  "scripts": {
+    "test": "wdio run wdio.conf.ts",
+    "test:headful": "wdio run wdio.conf.ts --headless=false"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.19",
+    "@wdio/cli": "^8.40.6",
+    "@wdio/local-runner": "^8.40.6",
+    "@wdio/mocha-framework": "^8.40.6",
+    "@wdio/spec-reporter": "^8.40.6",
+    "@wdio/types": "^9.24.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "webdriverio": "^8.46.0"
+  }
+}

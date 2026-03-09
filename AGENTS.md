@@ -17,6 +17,11 @@ This is a cross-platform desktop application built with **Tauri 2.x** framework,
 - **Rust (Edition 2021)** - Systems programming language
 - **tauri-plugin-opener 2.x** - Plugin for opening URLs in default browser
 
+### E2E Testing
+- **WebdriverIO 8.46.0** - Next-gen browser and mobile automation test framework
+- **Mocha** - JavaScript test framework
+- **tauri-driver** - Tauri WebDriver server for UI testing
+
 ## Project Structure
 
 ```
@@ -33,6 +38,12 @@ tauri-app/
 │   ├── Cargo.toml         # Rust dependencies
 │   ├── build.rs           # Build script
 │   └── tauri.conf.json    # Tauri configuration
+├── e2e/                    # E2E tests (WebdriverIO)
+│   ├── test/specs/        # Test spec files
+│   ├── wdio.conf.ts       # WebdriverIO configuration
+│   ├── tsconfig.json      # TypeScript config for tests
+│   ├── package.json       # Test dependencies
+│   └── DEBUG_TEST.md      # E2E testing guide and troubleshooting
 ├── public/                 # Public static assets
 ├── index.html             # HTML entry point
 ├── vite.config.ts         # Vite configuration
@@ -47,6 +58,15 @@ tauri-app/
 - `npm run build` - Build for production (TypeScript check + Vite build)
 - `npm run preview` - Preview production build
 - `npm run tauri` - Tauri CLI commands
+
+### E2E Test Commands
+```bash
+# Build release version first (required for E2E tests)
+npm run tauri build
+
+# Run E2E tests
+cd e2e && npm run test
+```
 
 ### Development Server
 - Port: `1420` (strict mode)
@@ -118,6 +138,45 @@ This command:
 2. Builds Rust backend in release mode
 3. Creates installable bundle in `src-tauri/target/release/bundle/`
 
+## E2E Testing
+
+### Overview
+E2E tests use WebdriverIO with tauri-driver to automate UI testing. Tests run against the **release build** which embeds frontend assets in the executable.
+
+### Prerequisites for E2E Testing (Windows)
+1. **msedgedriver** - Must match Edge/WebView2 version
+   - Download from: https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/
+   - Place in system PATH (e.g., `C:\Windows\System32`)
+2. **tauri-driver** - Install via cargo:
+   ```bash
+   cargo install tauri-driver
+   ```
+
+### Running E2E Tests
+```bash
+# 1. Build release version (frontend assets embedded in exe)
+npm run tauri build
+
+# 2. Run tests
+cd e2e
+npm install
+npm run test
+```
+
+### E2E Test Structure
+- `e2e/test/specs/greet.spec.ts` - Main test file with 4 test cases:
+  1. App launch and title verification
+  2. Greet with valid name
+  3. Empty input handling
+  4. Chinese character support
+
+### Known E2E Issues
+1. **WebView2 clearValue bug**: Use JavaScript to trigger Vue's input event instead of `clearValue()`
+2. **BMP character limit**: msedgedriver doesn't support emoji characters
+3. **Debug build issue**: E2E tests require release build; debug build depends on Vite dev server
+
+For detailed troubleshooting, see `e2e/DEBUG_TEST.md`.
+
 ## Code Conventions
 
 ### Vue Components
@@ -134,6 +193,11 @@ This command:
 - Strict type checking enabled
 - Use type inference where possible
 - Explicit types for function parameters and return types
+
+### E2E Tests
+- Add `/// <reference types="@wdio/globals/types" />` at the top of spec files
+- Use `browser.pause()` for timing, not arbitrary timeouts
+- Use JavaScript execution for Vue/React framework updates
 
 ## Plugins Used
 
@@ -156,6 +220,8 @@ Opens URLs in default browser with `openUrl()` function.
 
 1. **Windows Library Naming**: The `_lib` suffix in `tauri_app_lib` is necessary to avoid conflicts between binary and library names on Windows (see `src-tauri/Cargo.toml:10-15`)
 
+2. **E2E Testing on Windows**: Requires msedgedriver version matching WebView2 version
+
 ## Next Steps for Development
 
 1. Add more Tauri commands for complex backend logic
@@ -163,5 +229,4 @@ Opens URLs in default browser with `openUrl()` function.
 3. Add routing (Vue Router) for multi-page apps
 4. Configure CSP for production security
 5. Add Tauri plugins for system features (file system, clipboard, notifications, etc.)
-6. Implement error boundaries and loading states
-7. Add tests for both frontend (Vitest) and backend (Rust tests)
+6. Add more E2E test coverage for edge cases

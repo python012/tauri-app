@@ -72,7 +72,46 @@ cargo --version
 winget install Rustlang.Rustup
 ```
 
+## 3.1 启动前快速自检（强烈建议）
+
+每次新开终端，先执行以下检查，避免出现 `cargo metadata ... program not found`：
+
+```bash
+node -v
+npm -v
+rustc --version
+cargo --version
+```
+
+如果 `cargo --version` 报错，说明当前终端没有拿到 Rust 的 PATH。
+
+- CMD 临时修复：
+
+```bash
+set PATH=%USERPROFILE%\.cargo\bin;%PATH%
+cargo --version
+```
+
+- PowerShell 临时修复：
+
+```powershell
+$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+cargo --version
+```
+
+然后再运行：
+
+```bash
+npm run tauri dev
+```
+
 ## 4. 开发与调试命令
+
+推荐顺序（Windows）：
+
+1. `npm install`
+2. `cargo --version`（确认当前终端可用）
+3. `npm run tauri dev`
 
 ## 4.1 只启动前端（Vite）
 
@@ -139,12 +178,40 @@ set RUST_LOG=debug
 npm run tauri dev
 ```
 
+PowerShell 写法：
+
+```powershell
+$env:RUST_BACKTRACE = "1"
+npm run tauri dev
+```
+
+```powershell
+$env:RUST_LOG = "debug"
+npm run tauri dev
+```
+
 ## 5.3 常见问题
 
 1. 端口被占用（`1420`）：关闭占用进程，或在 `vite.config.ts` 中调整端口并同步 `tauri.conf.json` 的 `devUrl`
 2. Rust 编译失败：检查是否安装了 MSVC Build Tools，并更新依赖后重试
 3. 前端调用 Rust 命令失败：检查命令名、参数名是否与 `#[tauri::command]` 定义一致
 4. 热更新不生效：确认没有手动改动 `strictPort` 导致 Tauri 与 Vite 端口不匹配
+
+## 5.4 本次教训记录（已验证）
+
+现象：
+
+- `npm run tauri dev` 报错：`failed to run 'cargo metadata' ... program not found`
+
+根因：
+
+- Rust 已安装，但当前终端会话没有包含 `C:\Users\<user>\.cargo\bin` 到 PATH。
+
+结论：
+
+1. `npm run tauri dev` 命令本身没有问题。
+2. 同一台机器上“有的终端能跑、有的不能跑”通常是环境变量继承差异。
+3. 处理方式是补 PATH 或重启终端/VS Code 让 PATH 重新加载。
 
 ## 6. 继续开发建议
 
@@ -175,3 +242,31 @@ npm run preview
 # 桌面发布构建
 npm run tauri build
 ```
+
+## 8. macOS 启动与注意事项
+
+## 8.1 环境准备
+
+1. 安装 Xcode Command Line Tools：
+
+```bash
+xcode-select --install
+```
+
+2. 安装 Node.js（建议 LTS）
+3. 安装 Rust（rustup）
+
+## 8.2 启动调试
+
+```bash
+npm install
+rustc --version
+cargo --version
+npm run tauri dev
+```
+
+## 8.3 常见注意事项
+
+1. 第一次运行可能弹出系统安全权限提示，按需授权（文件、网络等）。
+2. 如果是 Apple Silicon（M 系列），确保 Node/Rust 架构一致，避免混用造成编译或链接问题。
+3. 发布到 macOS 时通常需要代码签名与公证（Notarization），开发调试阶段可暂不处理。
