@@ -111,4 +111,4 @@ $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
 ## 参考文档
 
 - `TEST.md`: 测试方案、覆盖范围和框架对比
-- `DEBUG.md`: 调试步骤、问题记录、环境排错
+- `DEBUG_TEST.md`: 调试步骤、问题记录、环境排错
