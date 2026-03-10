@@ -1,38 +1,66 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
 const greetMsg = ref("");
 const name = ref("");
+const isApplePage = ref(false);
+const MAIN_WINDOW_TITLE = "Tauri App - Main Workspace";
+const APPLE_WINDOW_TITLE = "Tauri App - Apple Greeting";
+
+watch(
+  isApplePage,
+  async (isApple) => {
+    const nextTitle = isApple ? APPLE_WINDOW_TITLE : MAIN_WINDOW_TITLE;
+    document.title = nextTitle;
+
+    // Keep native Tauri title bar in sync via backend command.
+    await invoke("set_window_title", { title: nextTitle });
+  },
+  { immediate: true },
+);
 
 async function greet() {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
   greetMsg.value = await invoke("greet", { name: name.value });
+  isApplePage.value = name.value === "Apple";
+}
+
+function goBack() {
+  isApplePage.value = false;
 }
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+    <template v-if="!isApplePage">
+      <h1>{{ MAIN_WINDOW_TITLE }}</h1>
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
+      <div class="row">
+        <a href="https://vite.dev" target="_blank">
+          <img src="/vite.svg" class="logo vite" alt="Vite logo" />
+        </a>
+        <a href="https://tauri.app" target="_blank">
+          <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
+        </a>
+        <a href="https://vuejs.org/" target="_blank">
+          <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+        </a>
+      </div>
+      <p>Main page of the app. Enter Apple to open the Apple greeting window.</p>
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
+      <form class="row" @submit.prevent="greet">
+        <input id="greet-input" v-model="name" placeholder="Enter a name..." />
+        <button type="submit">Greet</button>
+      </form>
+      <p>{{ greetMsg }}</p>
+    </template>
+
+    <template v-else>
+      <h1>{{ APPLE_WINDOW_TITLE }}</h1>
+      <p id="apple-greet-msg">{{ greetMsg }}</p>
+      <button id="back-button" type="button" @click="goBack">Back</button>
+    </template>
   </main>
 </template>
 

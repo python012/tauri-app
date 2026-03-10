@@ -1,4 +1,4 @@
-# E2E 测试计划
+# 当前项目的 E2E 测试方案
 
 ## 概述
 
@@ -13,6 +13,27 @@
 | Mocha | 10.x | 测试运行器 |
 | TypeScript | 5.x | 测试代码语言 |
 | WebDriver | - | 通信协议 |
+
+## 与 Python + Pytest + Selenium + chromedriver 对比
+
+下面用对比表说明两套方案在测试分层上的对应关系，帮助快速理解当前 `e2e` 项目这套技术的职责分工。
+
+| 维度 | 当前项目（Tauri E2E） | 常见 Python Web E2E | 说明 |
+|------|------------------------|----------------------|------|
+| 测试代码语言 | TypeScript | Python | 仅语言不同，核心流程一致 |
+| 用例组织/测试运行器 | Mocha | Pytest | 负责 `describe/it` 或 `test_*` 结构、执行顺序、生命周期钩子 |
+| 自动化操作 API | WebdriverIO（WDIO） | Selenium WebDriver（Python bindings） | 负责查找元素、点击、输入、等待、断言配合 |
+| WebDriver 服务端驱动 | tauri-driver | chromedriver.exe | 都是 WebDriver 协议实现方，接收自动化命令并驱动目标应用 |
+| 被测目标 | Tauri 桌面应用（WebView） | Chrome 浏览器中的网页 | 一个偏桌面壳应用，一个偏浏览器网页 |
+| 启动方式 | WDIO 在 `onPrepare` 启动 `tauri-driver`，并通过 capability 指定 `.exe` | 常见为 Selenium 连接 chromedriver 并拉起 Chrome | 都可以做到测试时自动拉起被测目标 |
+| 构建前置条件 | 需要先有 `src-tauri/target/release/tauri-app.exe` | 通常无需编译本地 exe（除非测本地打包应用） | Tauri E2E 对构建产物更敏感 |
+| 常见日志前缀 | `[0-0]`（WDIO worker/capability 标识） | Pytest/Selenium 常见为测试名+步骤日志 | 日志样式不同，不影响测试本质 |
+
+### 一句话理解
+
+- Python 方案可概括为：`Pytest -> Selenium -> chromedriver -> Chrome 页面`
+- 当前方案可概括为：`Mocha -> WDIO -> tauri-driver -> Tauri 应用`
+- 两者在“分层思想”上是一致的，只是目标环境和工具生态不同。
 
 ## 架构设计
 
@@ -135,10 +156,14 @@ describe('Greet Feature', () => {
 
 ### 测试覆盖范围
 
-- [ ] 基础 UI 渲染
-- [ ] Greet 功能（输入 → 点击 → 显示结果）
-- [ ] IPC 通信（前端调用 Rust 命令）
-- [ ] 边界情况（空输入、特殊字符等）
+- [x] 基础 UI 渲染（应用启动、主标题显示）
+- [x] Greet 功能（输入 → 点击 → 显示结果）
+- [x] IPC 通信（前端调用 Rust 命令）
+- [x] 边界情况（空输入、中文字符等）
+- [x] 条件页面跳转（输入 `Apple` 跳转到结果页）
+- [x] 页面返回行为（点击 `Back` 返回主页面）
+- [x] 窗口标题行为（主页面/Apple 页面标题切换与恢复）
+- [x] 负向场景（非 `Apple` 输入不触发跳转）
 
 ## 前置条件
 

@@ -1,5 +1,8 @@
 /// <reference types="@wdio/globals/types" />
 
+const MAIN_WINDOW_TITLE = 'Tauri App - Main Workspace';
+const APPLE_WINDOW_TITLE = 'Tauri App - Apple Greeting';
+
 /**
  * Tauri 应用 E2E 测试套件
  * 
@@ -31,11 +34,11 @@ describe('Tauri App E2E Tests', () => {
    */
   it('should launch the app and display the title', async () => {
     const title = await browser.getTitle();
-    expect(title).toBe('Tauri + Vue + Typescript App');
+    expect(title).toBe(MAIN_WINDOW_TITLE);
     
     const h1 = await $('h1');
     await expect(h1).toBeDisplayed();
-    await expect(h1).toHaveText('Welcome to Tauri + Vue');
+    await expect(h1).toHaveText(MAIN_WINDOW_TITLE);
   });
 
   /**
@@ -169,5 +172,103 @@ describe('Tauri App E2E Tests', () => {
     }
     
     expect(foundGreeting).toBe(true);
+  });
+
+  /**
+   * 测试 5: Apple 条件跳转与返回主页面
+   *
+   * 测试点：
+   *   - 验证输入 Apple 后会进入 Apple 页面（条件导航）
+   *   - 验证 Apple 页面会显示正确问候语
+   *   - 验证窗口标题切换为 Apple 页面标题
+   *   - 验证点击 Back 后会返回主页面
+   *   - 验证返回后窗口标题恢复为主页面标题
+   *
+   * 测试步骤：
+   *   1. 找到输入框并用 JavaScript 清空（触发 Vue input 事件）
+   *   2. 输入 "Apple" 并点击提交按钮
+   *   3. 等待 Apple 页面元素 `#apple-greet-msg` 可见并断言文本
+   *   4. 获取窗口标题并断言为 Apple 标题
+   *   5. 点击返回按钮 `#back-button`
+   *   6. 断言主页面标题与输入框重新可见
+   *   7. 断言窗口标题恢复为主页面标题
+   */
+  it('should navigate to Apple page and go back to main page', async () => {
+    const input = await $('#greet-input');
+    await browser.execute(`
+      const el = document.querySelector("#greet-input");
+      el.value = "";
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    `);
+    await browser.pause(100);
+    await input.setValue('Apple');
+
+    const button = await $('button[type="submit"]');
+    await button.click();
+
+    const appleMsg = await $('#apple-greet-msg');
+    await appleMsg.waitForDisplayed({ timeout: 5000 });
+    await expect(appleMsg).toHaveText("Hello, Apple! You've been greeted from Rust!");
+
+    const appleWindowTitle = await browser.getTitle();
+    expect(appleWindowTitle).toBe(APPLE_WINDOW_TITLE);
+
+    const backButton = await $('#back-button');
+    await expect(backButton).toBeDisplayed();
+    await backButton.click();
+
+    const mainTitle = await $('h1');
+    await mainTitle.waitForDisplayed({ timeout: 5000 });
+    await expect(mainTitle).toHaveText(MAIN_WINDOW_TITLE);
+
+    const mainWindowTitle = await browser.getTitle();
+    expect(mainWindowTitle).toBe(MAIN_WINDOW_TITLE);
+
+    const mainInput = await $('#greet-input');
+    await expect(mainInput).toBeDisplayed();
+  });
+
+  /**
+   * 测试 6: 非 Apple 输入不触发跳转
+   *
+   * 测试点：
+   *   - 验证输入非 Apple（如 World）时不会跳转到 Apple 页面
+   *   - 验证页面保持在主页面
+   *   - 验证窗口标题保持为主页面标题
+   *   - 验证 Apple 页面元素与返回按钮不存在
+   *
+   * 测试步骤：
+   *   1. 找到输入框并用 JavaScript 清空（触发 Vue input 事件）
+   *   2. 输入 "World" 并点击提交按钮
+   *   3. 断言主页面标题仍然可见且文本正确
+   *   4. 断言窗口标题仍为主页面标题
+   *   5. 断言 `#apple-greet-msg` 不存在
+   *   6. 断言 `#back-button` 不存在
+   */
+  it('should stay on main page when input is not Apple', async () => {
+    const input = await $('#greet-input');
+    await browser.execute(`
+      const el = document.querySelector("#greet-input");
+      el.value = "";
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    `);
+    await browser.pause(100);
+    await input.setValue('World');
+
+    const button = await $('button[type="submit"]');
+    await button.click();
+
+    const mainTitle = await $('h1');
+    await mainTitle.waitForDisplayed({ timeout: 5000 });
+    await expect(mainTitle).toHaveText(MAIN_WINDOW_TITLE);
+
+    const mainWindowTitle = await browser.getTitle();
+    expect(mainWindowTitle).toBe(MAIN_WINDOW_TITLE);
+
+    const appleMsg = await $('#apple-greet-msg');
+    await expect(appleMsg).not.toExist();
+
+    const backButton = await $('#back-button');
+    await expect(backButton).not.toExist();
   });
 });
